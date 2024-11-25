@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sheets API Example</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a237e;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #1a237e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0d47a1;
+        }
+
+        .song-list {
+            margin-top: 20px;
+        }
+
+        .song-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            background-color: #ffffff;
+            margin-bottom: 15px;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .song-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .song-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .song-category {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .song-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a237e;
+        }
+
+        .song-metadata {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: flex-end;
+        }
+
+        .song-beat {
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lyrics-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #1a237e;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+
+        .lyrics-link:hover {
+            background-color: #f5f5f5;
+        }
+
+        .icon {
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .song-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .song-metadata {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weekly Songs Generator</h1>
+        <button id="generate-songs">Generate Songs</button>
+        <div class="song-list" id="song-list"></div>
+    </div>
+
+    <script>
+        const apiKey = "AIzaSyBonXWLL_E4udbGNSoYICtD6jQT7ThOR3I"; // Replace with your API key
+        const spreadsheetId = "12TkhA9aCUWSPllIKgwaHqMNZbKnlp3qtRjScCFV_PfM"; // Replace with your spreadsheet ID
+        const sheetName = "Telugu Songs"; // Replace with your sheet name
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
+
+        let songs = [];
+
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log("Sheet Data:", data);
+                return parseSheetData(data.values);
+            } catch (error) {
+                console.error("Error fetching or parsing data:", error);
+                console.error("Check the following:");
+                console.error("- Is the spreadsheetId correct?");
+                console.error("- Is the sheetName correct and case-sensitive?");
+                console.error("- Is the API key valid and authorized?");
+                return [];
+            }
+        }
+
+        function parseSheetData(values) {
+            if (!values || values.length === 0) {
+                console.error("No data in sheet");
+                return [];
+            }
+            const headers = values[0];
+            return values.slice(1).map((row) => {
+                const song = {};
+                headers.forEach((header, index) => {
+                    song[header] = row[index] || "";
+                });
+                return song;
+            });
+        }
+
+        function generateSongs() {
+            const categories = {
+                "Praising Song - 1": 1,
+                "Nornal Worship": 3,
+                "Worship - Speed": 1,
+                "Worship - Slow": 1,
+                "Offerings": 1
+            };
+
+            const selectedSongs = [];
+            const categoryCounts = {};
+
+            for (const category in categories) {
+                const categorySongs = songs.filter(
+                    (song) => song.Category === category
+                );
+
+                for (let i = 0; i < categories[category]; i++) {
+                    if (categorySongs.length === 0) {
+                        console.warn(`Not enough songs in category: ${category}`);
+                        break;
+                    }
+                    const randomIndex = Math.floor(Math.random() * categorySongs.length);
+                    const selectedSong = categorySongs.splice(randomIndex, 1)[0];
+                    selectedSongs.push(selectedSong);
+                }
+            }
+
+            displaySongs(selectedSongs);
+        }
+
+        function displaySongs(selectedSongs) {
+            const songList = document.getElementById("song-list");
+            songList.innerHTML = "";
+
+            selectedSongs.forEach((song) => {
+                const songItem = document.createElement("div");
+                songItem.className = "song-item";
+                songItem.innerHTML = `
+                    <div class="song-info">
+                        <div class="song-category">
+                            <i class="fas fa-music icon"></i>
+                            ${song.Category}
+                        </div>
+                        <div class="song-name">${song.SongNameTelugu}</div>
+                    </div>
+                    <div class="song-metadata">
+                        <div class="song-beat">
+                            <i class="fas fa-clock icon"></i>
+                            ${song.Beat}
+                        </div>
+                        <a href="${song.URL}" target="_blank" class="lyrics-link">
+                            <i class="fas fa-file-alt icon"></i>
+                            Lyrics
+                        </a>
+                    </div>
+                `;
+                songList.appendChild(songItem);
+            });
+        }
+
+        window.onload = async () => {
+            songs = await fetchSheetData();
+            if (songs.length > 0) {
+                console.log("Songs successfully loaded:", songs);
+            } else {
+                console.error("Failed to load songs.");
+            }
+        };
+
+        document.getElementById("generate-songs").addEventListener("click", generateSongs);
+    </script>
+</body>
+</html>
